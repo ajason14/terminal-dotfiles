@@ -101,6 +101,7 @@ targets=(
   "$HOME/.local/bin/codex-role"
   "$HOME/.local/bin/session-objective"
   "$HOME/.claude/statusline.sh"
+  "$HOME/.claude/hooks/track-crm-org.sh"
   "$HOME/.claude/commands/objective.md"
 )
 

@@ -141,6 +141,7 @@ run mkdir -p "$HOME/.config"
 run mkdir -p "$HOME/.local/bin"
 run mkdir -p "$HOME/.codex"
 run mkdir -p "$HOME/.claude/commands"
+run mkdir -p "$HOME/.claude/hooks"
 
 if [[ "$mode" == "link" ]]; then
   link_path "$root_dir/wezterm/.wezterm.lua" "$HOME/.wezterm.lua"
@@ -154,6 +155,7 @@ if [[ "$mode" == "link" ]]; then
   link_path "$root_dir/codex/bin/codex-role" "$HOME/.local/bin/codex-role"
   link_path "$root_dir/bin/session-objective" "$HOME/.local/bin/session-objective"
   link_path "$root_dir/claude/statusline.sh" "$HOME/.claude/statusline.sh"
+  link_path "$root_dir/claude/hooks/track-crm-org.sh" "$HOME/.claude/hooks/track-crm-org.sh"
   link_path "$root_dir/claude/commands/objective.md" "$HOME/.claude/commands/objective.md"
   for profile in "$root_dir"/codex/profiles/*.config.toml; do
     link_path "$profile" "$HOME/.codex/$(basename "$profile")"
@@ -192,6 +194,7 @@ install_file "$root_dir/codex/AGENTS.md" "$HOME/.codex/AGENTS.md"
 install_file "$root_dir/codex/bin/codex-role" "$HOME/.local/bin/codex-role" 0755
 install_file "$root_dir/bin/session-objective" "$HOME/.local/bin/session-objective" 0755
 install_file "$root_dir/claude/statusline.sh" "$HOME/.claude/statusline.sh" 0755
+install_file "$root_dir/claude/hooks/track-crm-org.sh" "$HOME/.claude/hooks/track-crm-org.sh" 0755
 install_file "$root_dir/claude/commands/objective.md" "$HOME/.claude/commands/objective.md"
 
 for agent in "$root_dir"/codex/agents/*.toml; do
