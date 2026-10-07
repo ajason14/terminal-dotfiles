@@ -1101,6 +1101,10 @@ bundle. To publish only one bundle:
 List the relative path of any new or changed image in the relevant file under
 `wezterm/modules/background_manifests`.
 
+If an image's highlights (white cars, headlights) wash out terminal text, dim
+just that image with `{ 'path/to/image.png', brightness_scale = 0.5 }`. The
+scale multiplies the global `background_hsb.brightness`.
+
 The background list is intentionally explicit. WezTerm does not auto-scan the
 folders, so archive, experiment, or sensitive folders can exist without showing
 up in rotation unless a file is added to a manifest.
