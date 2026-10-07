@@ -63,35 +63,66 @@ local function listed_background_groups(env)
   }
 end
 
+-- A manifest entry is a path, or { path, brightness_scale = n } to dim one
+-- image further than the global hsb (bright highlights behind light text).
+local function parse_entry(entry)
+  if type(entry) == 'table' then
+    return entry[1], entry.brightness_scale
+  end
+
+  return entry, nil
+end
+
 local function all_background_files(env, local_config)
   local files = {}
+  local scales = {}
   local excludes = exclude_set(local_config.background_excludes)
 
   for _, group in ipairs(listed_background_groups(env)) do
-    for _, file in ipairs(group) do
+    for _, entry in ipairs(group) do
+      local file, scale = parse_entry(entry)
       if not excludes[file] then
         table.insert(files, file)
+        scales[file] = scale
       end
     end
   end
 
-  return files
+  return files, scales
 end
 
+-- Returns the existing image paths plus their brightness scales keyed by path.
 local function collect_backgrounds(env)
   local backgrounds = {}
+  local scales_by_path = {}
   local dir = env.config_dir .. '/assets/backgrounds'
   local local_config = env.local_config or {}
-  local background_files = all_background_files(env, local_config)
+  local background_files, scales = all_background_files(env, local_config)
 
   for _, file in ipairs(background_files) do
     local path = dir .. '/' .. file
     if file_exists(path) then
       table.insert(backgrounds, path)
+      scales_by_path[path] = scales[file]
     end
   end
 
-  return backgrounds
+  return backgrounds, scales_by_path
+end
+
+-- The hsb for one image: the global hsb with its brightness_scale applied.
+local function image_hsb(hsb, scales, background)
+  local scale = scales and scales[background]
+  if not scale then
+    return hsb
+  end
+
+  local adjusted = {}
+  for key, value in pairs(hsb) do
+    adjusted[key] = value
+  end
+  adjusted.brightness = (hsb.brightness or 1.0) * scale
+  return adjusted
 end
 
 -- Pseudo-random but repeat-free rotation: each pass through the list uses a
@@ -205,7 +236,7 @@ local function advance_background(wezterm)
         wezterm,
         gui_window,
         background,
-        state.hsb,
+        image_hsb(state.hsb, state.brightness_scales, background),
         state.text_opacity,
         state.fit,
         state.h_align,
@@ -232,7 +263,7 @@ local function should_keep_running(owner, my_id, now, stale)
 end
 
 function M.apply(config, wezterm, env)
-  local backgrounds = collect_backgrounds(env)
+  local backgrounds, brightness_scales = collect_backgrounds(env)
   local local_config = env.local_config or {}
   local hsb = local_config.background_hsb or background_hsb
   local interval = local_config.background_rotation_seconds or rotation_seconds
@@ -246,7 +277,8 @@ function M.apply(config, wezterm, env)
   local initial_background = forced or current_background(backgrounds, interval, wezterm.GLOBAL.background_slot_offset)
 
   if initial_background then
-    config.background = build_background_layers(initial_background, hsb, fit, h_align, v_align)
+    config.background =
+      build_background_layers(initial_background, image_hsb(hsb, brightness_scales, initial_background), fit, h_align, v_align)
     config.text_background_opacity = text_opacity
   end
 
@@ -258,6 +290,7 @@ function M.apply(config, wezterm, env)
     images = backgrounds,
     interval = interval,
     hsb = hsb,
+    brightness_scales = brightness_scales,
     text_opacity = text_opacity,
     fit = fit,
     h_align = h_align,
@@ -337,7 +370,7 @@ function M.apply(config, wezterm, env)
             wezterm,
             gui_window,
             background,
-            state.hsb,
+            image_hsb(state.hsb, state.brightness_scales, background),
             state.text_opacity,
             state.fit,
             state.h_align,
@@ -365,5 +398,7 @@ end
 M._should_keep_running = should_keep_running
 M._current_background = current_background
 M._shuffled_index = shuffled_index
+M._parse_entry = parse_entry
+M._image_hsb = image_hsb
 
 return M

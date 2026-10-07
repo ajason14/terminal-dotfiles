@@ -98,6 +98,25 @@ check('shuffled_index stays within [1, count]', in_range)
 check('one full cycle of shuffled_index is a repeat-free permutation',
   distinct == count)
 
+-- Per-image brightness -------------------------------------------------------
+
+local plain_file, plain_scale = M._parse_entry('a.png')
+check('parse_entry: a bare path has no brightness scale',
+  plain_file == 'a.png' and plain_scale == nil)
+
+local tagged_file, tagged_scale = M._parse_entry({ 'b.png', brightness_scale = 0.5 })
+check('parse_entry: a table entry yields its path and scale',
+  tagged_file == 'b.png' and tagged_scale == 0.5)
+
+local base_hsb = { brightness = 0.4, saturation = 0.9 }
+check('image_hsb: an unscaled image keeps the global hsb',
+  M._image_hsb(base_hsb, { ['/x/b.png'] = 0.5 }, '/x/a.png') == base_hsb)
+
+local scaled = M._image_hsb(base_hsb, { ['/x/b.png'] = 0.5 }, '/x/b.png')
+check('image_hsb: a scaled image multiplies brightness, keeps saturation',
+  math.abs(scaled.brightness - 0.2) < 1e-9 and scaled.saturation == 0.9)
+check('image_hsb: never mutates the shared global hsb', base_hsb.brightness == 0.4)
+
 -- Result --------------------------------------------------------------------
 
 if failures > 0 then
